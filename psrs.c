@@ -21,11 +21,22 @@ int main( int argc, char *argv[] )
     return 1;
   }
 
+  int numbers_size = atoi( argv[1] ); // amount of numbers to generate
+  int numbers[ numbers_size ]; // will contain all generated numbers in root process
+
+  if (numbers_size % size != 0) {
+    if ( rank == 0 )
+      printf("<size of random array> must be a multiple of the number of nodes\n");
+    MPI_Finalize();
+    return 1;
+  }
+  
+  int numbers_per_processor_size = numbers_size / size;
+  int numbers_per_processor[ numbers_per_processor_size ];
+  
   if ( rank == 0 )
   {
     // Zufallszahlen erzeugen (mit seed)
-    int numbers_size = atoi( argv[1] );
-    int numbers[ numbers_size ];
     srand ( SEED );
     for( int pos=0; pos < numbers_size; pos++ )
     {
@@ -33,57 +44,42 @@ int main( int argc, char *argv[] )
       int already_in_numbers;
       do
       {
-	already_in_numbers = 0;
-	next = rand() % ( RAND_MAGNITUDE_FACTOR * numbers_size );
-	for ( int check_pos=0; check_pos <= pos; check_pos++ )
-	{
-	  if ( numbers[ check_pos ] == next )
-	  {
-	    already_in_numbers = 1;
-	    break;
-	  }
-	}
+        already_in_numbers = 0;
+        next = rand() % ( RAND_MAGNITUDE_FACTOR * numbers_size );
+        for ( int check_pos=0; check_pos <= pos; check_pos++ )
+        {
+          if ( numbers[ check_pos ] == next )
+          {
+            already_in_numbers = 1;
+            break;
+          }
+        }
       } while ( already_in_numbers == 1 );
       numbers[ pos ] = next;
     }
-    // Zufallszahlen gleichmäßig verteilen  
-    int random_numbers[10], numbers_per_processor[5];
-    int i;
-    for (i = 0; i < 10; i++) {
-      random_numbers[i] = 10 - i - 1;
-    }
-  
-    printf("size: %d, rank: %d\n", size, rank);
-  
-    // MPI_Scatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm)
-    // sendcount must be equal to recvcount
-    MPI_Scatter(&random_numbers, 5, MPI_INT, &numbers_per_processor, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  
-    printf("my rank is %d, my data is ", rank);
-    for (i = 0; i < 5; i++) {
-      printf("%d", numbers_per_processor[i]);
-    }
-    printf("\n\n");
-  }  
-  
+  }
+
+  // Zufallszahlen gleichmäßig verteilen
+  MPI_Scatter(&numbers, numbers_per_processor_size, MPI_INT, &numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
+
   // repräsentative Selektion erstellen
-  
+
   // Selektion auf einem Knoten einsammeln
-  
+
   // Selektion sortieren
-  
+
   // Pivots selektieren
-  
+
   // Pivots verteilen
-  
+
   // Blockbildung
-  
+
   // Blöcke nach Rang an Knoten versenden
-  
+
   // jeder Prozessor sortiert seine Blöcke
-  
+
   // sortierte Blöcke einsammeln
-  
+
   // Fertig!
   MPI_Finalize();
   return 0;
