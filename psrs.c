@@ -26,7 +26,7 @@ int main( int argc, char *argv[] )
 
   if (numbers_size % size != 0) {
     if ( rank == 0 )
-      printf("<size of random array> must be a multiple of the number of nodes\n");
+      printf("<size of random array> must be a multiple of the number of nodes (%d)\n", size);
     MPI_Finalize();
     return 1;
   }
@@ -61,11 +61,26 @@ int main( int argc, char *argv[] )
 
   // Zufallszahlen gleichmäßig verteilen
   MPI_Scatter(&numbers, numbers_per_processor_size, MPI_INT, &numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  printf("rank: %d\t", rank);
+  for (int i = 0; i < numbers_per_processor_size; i++) {
+    printf("%d, ", numbers_per_processor[i]);
+  }
+  printf("\n\n");
 
   // repräsentative Selektion erstellen
 
   // Selektion auf einem Knoten einsammeln
-
+  // int MPI_Gather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype, recvtype, int root, MPI_Comm comm)
+  int selected_numbers[ size * size ];
+  MPI_Gather(numbers_per_processor, size, MPI_INT, selected_numbers, size, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  if (rank == 0) {
+    for (int j = 0; j < size * size; j++) {
+      printf("%d, ", selected_numbers[j]);
+    }
+  }
+  
   // Selektion sortieren
 
   // Pivots selektieren
