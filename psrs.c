@@ -46,7 +46,24 @@ int main( int argc, char *argv[] )
       } while ( already_in_numbers == 1 );
       numbers[ pos ] = next;
     }
-    // Zufallszahlen gleichmäßig verteilen
+    // Zufallszahlen gleichmäßig verteilen  
+    int random_numbers[10], numbers_per_processor[5];
+    int i;
+    for (i = 0; i < 10; i++) {
+      random_numbers[i] = 10 - i - 1;
+    }
+  
+    printf("size: %d, rank: %d\n", size, rank);
+  
+    // MPI_Scatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm)
+    // sendcount must be equal to recvcount
+    MPI_Scatter(&random_numbers, 5, MPI_INT, &numbers_per_processor, 5, MPI_INT, 0, MPI_COMM_WORLD);
+  
+    printf("my rank is %d, my data is ", rank);
+    for (i = 0; i < 5; i++) {
+      printf("%d", numbers_per_processor[i]);
+    }
+    printf("\n\n");
   }  
   
   // repräsentative Selektion erstellen
