@@ -13,6 +13,20 @@ int main(int argc, char *argv[])
   
   // Zufallszahlen gleichmäßig verteilen
   
+  int random_numbers[size * 100], numbers_per_processor[100];
+  int i;
+  for (i = 0; i < size * 100; i++) {
+    random_numbers[i] = size * 100 - i;
+  }
+  
+  // MPI_Scatter(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm)
+  MPI_Scatter(random_numbers, size * 100, MPI_INT, numbers_per_processor, 100, MPI_INT, MPI_COMM_WORLD);
+  printf("my rank is %d, my data is ", rank);
+  for (i = 0; i < 100; i++) {
+    printf("%d", numbers_per_processor[i]);
+  }
+  printf("\n\n");
+  
   // repräsentative Selektion erstellen
   
   // Selektion auf einem Knoten einsammeln
