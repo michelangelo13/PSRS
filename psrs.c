@@ -196,8 +196,31 @@ int main( int argc, char *argv[] )
     }
     printf("\n");
   // jeder Prozessor sortiert seine Blöcke
+    quicksort(blocks_per_processor, 0, blocksize - 1);
   // sortierte Blöcke einsammeln
+    int blocksizes[size];
+    // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
+    MPI_Gather(&blocksize, 1, MPI_INT, blocksizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    int receive_sorted_displacements[size];
+    receive_sorted_displacements[0] = 0;
+    for (int pos = 1; pos < size; pos++) {
+      receive_sorted_displacements[pos] = blocksizes[pos - 1] + receive_sorted_displacements[pos - 1];
+    }
+    
+    if (rank == 0) {
+      for (int pos = 0; pos < size; pos++) {
+        printf("blocksize %d, displ %d\n", blocksizes[pos], receive_sorted_displacements[pos]);
+      }
+    }
+    
+    int sorted[numbers_size];
+    MPI_Gatherv(blocks_per_processor, blocksize, MPI_INT, sorted, blocksizes, receive_sorted_displacements, MPI_INT, 0, MPI_COMM_WORLD);
   // Fertig!
+  if (rank == 0) {
+    printf("Sorted numbers: \n");
+    print_array(sorted, numbers_size);
+  }
   MPI_Finalize();
   return 0;
 }
