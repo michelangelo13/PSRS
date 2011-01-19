@@ -105,17 +105,13 @@ int main( int argc, char *argv[] )
     // Pivots selektieren
     int t = size / 2;
     for (int pos = 1; pos < size; pos++) {
-      pivots[pos] = selected_numbers[pos * size + t];
+      pivots[pos - 1] = selected_numbers[pos * size + t];
     }
   }
-  int pivots[2];
-  pivots[0] = 60;
-  pivots[1] = 180;
 
   // Pivots verteilen
   // int MPI_Bcast ( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm)
-  MPI_Broadcast(pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD);
-  print_array(pivots, size - 1);
+  MPI_Bcast(pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD);
   // Blockbildung
   int* blocks[ size ];
   int block_sizes[ size ];
