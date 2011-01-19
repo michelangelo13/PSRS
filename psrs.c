@@ -127,17 +127,17 @@ void print_array( int a[], int size_of_a )
 
 void quicksort(int a[], int l, int r)
 {
-    if(r>l){					
-        int i=l-1, j=r, tmp;		
-        for(;;){			
-            while(a[++i]<a[r]);		
-            while(a[--j]>a[r] && j>i);	
-            if(i>=j) break;		
+    if(r>l){
+        int i=l-1, j=r, tmp;
+        for(;;){
+            while(a[++i]<a[r]);
+            while(a[--j]>a[r] && j>i);
+            if(i>=j) break;
             tmp=a[i]; a[i]=a[j]; a[j]=tmp;
         }
-        tmp=a[i]; a[i]=a[r]; a[r]=tmp;	
+        tmp=a[i]; a[i]=a[r]; a[r]=tmp;
 
-        quicksort(a, l, i-1);		
-        quicksort(a, i+1, r);		
+        quicksort(a, l, i-1);
+        quicksort(a, i+1, r);
     }
 }
