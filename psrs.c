@@ -157,34 +157,46 @@ int main( int argc, char *argv[] )
 
 
   // Blöcke nach Rang an Knoten versenden
-  int displacements[size];
-  displacements[0] = 0;
-  for (int pos = 1; pos < size; pos++) {
-    displacements[pos] = block_sizes[pos - 1] + displacements[pos - 1];
-  }
-    int blocks_per_processor[numbers_size];
     int receive_block_sizes[size];
     int receive_block_displacements[size];
+    
+    MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
+    
+    printf("rank: %d ;; ", rank);
     for (int pos = 0; pos < size; pos++) {
-      receive_block_sizes[pos] = numbers_per_processor_size;
-      if (pos == 0) {
-        receive_block_displacements[pos] = 0;
-        continue;
-      }
-      receive_block_displacements[pos] = numbers_per_processor_size + receive_block_displacements[pos - 1];
+      printf("original block size: %d, received block size: %d\n", block_sizes[pos], receive_block_sizes[pos]);
     }
+    printf("\n");
+    
+    receive_block_displacements[0] = 0;
+    for (int pos = 1; pos < size; pos++) {
+      receive_block_displacements[pos] = receive_block_sizes[pos - 1] + receive_block_displacements[pos - 1];
+    }
+    
+    int displacements[size];
+    displacements[0] = 0;
+    for (int pos = 1; pos < size; pos++) {
+      displacements[pos] = block_sizes[pos - 1] + displacements[pos - 1];
+    }
+    int blocksize = 0;
+    
+    for (int pos = 0; pos < size; pos++) {
+      blocksize += receive_block_sizes[pos];
+    }
+    
+    printf("rank %d, blocksize %d\n", rank, blocksize);
+    
+    int blocks_per_processor[blocksize];
+    
     MPI_Alltoallv(numbers_per_processor, block_sizes, displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
 
-    for( int pos=0; pos < numbers_size; pos++ )
+    for( int pos=0; pos < blocksize; pos++ )
     {
-      if (blocks_per_processor[pos] < 0) continue;
       printf("%d, ", blocks_per_processor[pos]);
     }
     printf("\n");
   // jeder Prozessor sortiert seine Blöcke
-
   // sortierte Blöcke einsammeln
-
   // Fertig!
   MPI_Finalize();
   return 0;
