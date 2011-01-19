@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <mpi.h>
 
 #define SEED 42
@@ -99,9 +100,52 @@ int main( int argc, char *argv[] )
 
   // Pivots selektieren
 
+  int pivots[2];
+  pivots[0] = 60;
+  pivots[1] = 180;
+
   // Pivots verteilen
 
   // Blockbildung
+  int* blocks[ size ];
+  int block_sizes[ size ];
+  for( int pos=0; pos < size; pos++ )
+  {
+    blocks[ pos ] = ( int* ) malloc( numbers_per_processor_size * sizeof( int ) );
+  }
+  int pivot_pos = 0;
+  int pivot = pivots[ pivot_pos ];
+  int block_pos = 0;
+  int in_block_pos = 0;
+  for( int pos=0; pos < numbers_per_processor_size; pos++ )
+  {
+    // printf( "[%d] %d <= %d\n", rank, numbers_per_processor[ pos ], pivot );
+    if( numbers_per_processor[ pos ] <= pivot )
+    {
+      blocks[ block_pos ][ in_block_pos++ ] = numbers_per_processor[ pos ];
+    }
+    else
+    {
+      block_sizes[ block_pos ] = in_block_pos;
+      blocks[ block_pos ] = ( int* ) realloc( blocks[ block_pos ], block_sizes[ block_pos ] * sizeof( int ) );
+      block_pos++;
+      in_block_pos = 0;
+      if( pivot_pos < ( size-1 ) -1 )
+	pivot = pivots[ ++pivot_pos ];
+      else
+	pivot = INT_MAX;
+      pos--;
+    }
+  }
+  block_sizes[ block_pos ] = in_block_pos;
+  blocks[ block_pos ] = ( int* ) realloc( blocks[ block_pos ], block_sizes[ block_pos ] * sizeof( int ) );
+
+  // delete me
+  for( int pos=0; pos < size; pos++ )
+  {
+    print_array( blocks[ pos ], block_sizes[ pos ] );
+  }  
+
 
   // Blöcke nach Rang an Knoten versenden
 
