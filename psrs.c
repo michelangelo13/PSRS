@@ -67,11 +67,11 @@ int main( int argc, char *argv[] )
   // Zufallszahlen gleichmäßig verteilen
   MPI_Scatter(&numbers, numbers_per_processor_size, MPI_INT, &numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
   
-  printf("rank: %d\t", rank);
-  for (int i = 0; i < numbers_per_processor_size; i++) {
-    printf("%d, ", numbers_per_processor[i]);
-  }
-  printf("\n\n");
+  // printf("rank: %d\t", rank);
+  // for (int i = 0; i < numbers_per_processor_size; i++) {
+  //   printf("%d, ", numbers_per_processor[i]);
+  // }
+  // printf("\n\n");
 
   // lokal sortieren
   quicksort( numbers_per_processor, 0, numbers_per_processor_size-1 );
@@ -88,18 +88,18 @@ int main( int argc, char *argv[] )
   // Selektion auf einem Knoten einsammeln
   // int MPI_Gather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype, recvtype, int root, MPI_Comm comm)
   int selected_numbers[ size * size ];
-  MPI_Gather(numbers_per_processor, size, MPI_INT, selected_numbers, size, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gather(representative_selection, size, MPI_INT, selected_numbers, size, MPI_INT, 0, MPI_COMM_WORLD);
   
-  if (rank == 0) {
-    for (int j = 0; j < size * size; j++) {
-      printf("%d, ", selected_numbers[j]);
-    }
-  }
+  // if (rank == 0) {
+  //   for (int j = 0; j < size * size; j++) {
+  //     printf("%d, ", selected_numbers[j]);
+  //   }
+  // }
   
   // Selektion sortieren
-
+  quicksort(selected_numbers, 0, size * size - 1);
+  print_array( numbers_per_processor, numbers_per_processor_size );
   // Pivots selektieren
-
   int pivots[2];
   pivots[0] = 60;
   pivots[1] = 180;
@@ -143,7 +143,7 @@ int main( int argc, char *argv[] )
   // delete me
   for( int pos=0; pos < size; pos++ )
   {
-    print_array( blocks[ pos ], block_sizes[ pos ] );
+    // print_array( blocks[ pos ], block_sizes[ pos ] );
   }  
 
 
