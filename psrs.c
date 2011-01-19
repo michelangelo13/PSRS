@@ -65,7 +65,7 @@ int main( int argc, char *argv[] )
   }
 
   // Zufallszahlen gleichmäßig verteilen
-  MPI_Scatter(&numbers, numbers_per_processor_size, MPI_INT, &numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatter(numbers, numbers_per_processor_size, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
   
   // printf("rank: %d\t", rank);
   // for (int i = 0; i < numbers_per_processor_size; i++) {
@@ -97,15 +97,25 @@ int main( int argc, char *argv[] )
   // }
   
   // Selektion sortieren
-  quicksort(selected_numbers, 0, size * size - 1);
-  print_array( numbers_per_processor, numbers_per_processor_size );
-  // Pivots selektieren
+  int pivots[size - 1];
+  if (rank == 0) {
+    quicksort(selected_numbers, 0, size * size - 1);
+    // print_array(selected_numbers, size * size);
+    
+    // Pivots selektieren
+    int t = size / 2;
+    for (int pos = 1; pos < size; pos++) {
+      pivots[pos] = selected_numbers[pos * size + t];
+    }
+  }
   int pivots[2];
   pivots[0] = 60;
   pivots[1] = 180;
 
   // Pivots verteilen
-
+  // int MPI_Bcast ( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm)
+  MPI_Broadcast(pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD);
+  print_array(pivots, size - 1);
   // Blockbildung
   int* blocks[ size ];
   int block_sizes[ size ];
