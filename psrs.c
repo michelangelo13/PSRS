@@ -112,8 +112,9 @@ int main( int argc, char *argv[] )
   // Pivots verteilen
   // int MPI_Bcast ( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm)
   MPI_Bcast(pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
   // Blockbildung
-  int* blocks[ size ];
+  int* blocks[ size ]; // wuerde blocks[size][numbers_per_processor_size] nicht die for-Schleife ersetzen?
   int block_sizes[ size ];
   for( int pos=0; pos < size; pos++ )
   {
@@ -150,11 +151,36 @@ int main( int argc, char *argv[] )
   for( int pos=0; pos < size; pos++ )
   {
     // print_array( blocks[ pos ], block_sizes[ pos ] );
+    printf("%d, ", block_sizes[pos]);
   }  
+  printf("\n");
 
 
   // Blöcke nach Rang an Knoten versenden
+  int displacements[size];
+  displacements[0] = 0;
+  for (int pos = 1; pos < size; pos++) {
+    displacements[pos] = block_sizes[pos - 1] + displacements[pos - 1];
+  }
+    int blocks_per_processor[numbers_size];
+    int receive_block_sizes[size];
+    int receive_block_displacements[size];
+    for (int pos = 0; pos < size; pos++) {
+      receive_block_sizes[pos] = numbers_per_processor_size;
+      if (pos == 0) {
+        receive_block_displacements[pos] = 0;
+        continue;
+      }
+      receive_block_displacements[pos] = numbers_per_processor_size + receive_block_displacements[pos - 1];
+    }
+    MPI_Alltoallv(numbers_per_processor, block_sizes, displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
 
+    for( int pos=0; pos < numbers_size; pos++ )
+    {
+      if (blocks_per_processor[pos] < 0) continue;
+      printf("%d, ", blocks_per_processor[pos]);
+    }
+    printf("\n");
   // jeder Prozessor sortiert seine Blöcke
 
   // sortierte Blöcke einsammeln
