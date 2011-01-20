@@ -30,22 +30,29 @@ int main( int argc, char *argv[] )
     return 1;
   }
 
-  int numbers_size = atoi( argv[1] ); // amount of numbers to generate
-  if (numbers_size % size != 0) {
-    if ( rank == 0 )
-      printf("<size of random array> must be a multiple of the number of nodes (%d)\n", size);
-    MPI_Finalize();
-    return 1;
-  }
-
   // Zufallszahlen erzeugen (mit seed)
+  int numbers_size = atoi( argv[1] ); // amount of numbers to generate
   int numbers[ numbers_size ]; // will contain all generated numbers in root process
   if (rank == 0) {
     generate_random_numbers(numbers, numbers_size);
   }
 
   // Zufallszahlen gleichmaessig verteilen
-  int numbers_per_processor_size = numbers_size / size;
+  int temp_numbers_per_processor_size = numbers_size / size;
+  int spare_numbers = numbers_size - temp_numbers_per_processor_size * size;
+  
+  int numbers_per_processor_sizes[size];
+  for (int pos = 0; pos < size; pos++) {
+    numbers_per_processor_sizes[pos] = temp_numbers_per_processor_size;
+    if (spare_numbers > 0) {
+      numbers_per_processor_sizes[pos]++;
+      spare_numbers--;
+    }
+  }
+  
+  int numbers_per_processor_size;
+  MPI_Scatter(numbers_per_processor_sizes, 1, MPI_INT, &numbers_per_processor_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
   int numbers_per_processor[ numbers_per_processor_size ];
   MPI_Scatter(numbers, numbers_per_processor_size, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
 
