@@ -67,12 +67,6 @@ int main( int argc, char *argv[] )
   // Zufallszahlen gleichmäßig verteilen
   MPI_Scatter(numbers, numbers_per_processor_size, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
   
-  // printf("rank: %d\t", rank);
-  // for (int i = 0; i < numbers_per_processor_size; i++) {
-  //   printf("%d, ", numbers_per_processor[i]);
-  // }
-  // printf("\n\n");
-
   // lokal sortieren
   quicksort( numbers_per_processor, 0, numbers_per_processor_size-1 );
   // print_array( numbers_per_processor, numbers_per_processor_size );
@@ -89,12 +83,6 @@ int main( int argc, char *argv[] )
   // int MPI_Gather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype, recvtype, int root, MPI_Comm comm)
   int selected_numbers[ size * size ];
   MPI_Gather(representative_selection, size, MPI_INT, selected_numbers, size, MPI_INT, 0, MPI_COMM_WORLD);
-  
-  // if (rank == 0) {
-  //   for (int j = 0; j < size * size; j++) {
-  //     printf("%d, ", selected_numbers[j]);
-  //   }
-  // }
   
   // Selektion sortieren
   int pivots[size - 1];
@@ -126,7 +114,6 @@ int main( int argc, char *argv[] )
   int in_block_pos = 0;
   for( int pos=0; pos < numbers_per_processor_size; pos++ )
   {
-    // printf( "[%d] %d <= %d\n", rank, numbers_per_processor[ pos ], pivot );
     if( numbers_per_processor[ pos ] <= pivot )
     {
       blocks[ block_pos ][ in_block_pos++ ] = numbers_per_processor[ pos ];
@@ -147,26 +134,11 @@ int main( int argc, char *argv[] )
   block_sizes[ block_pos ] = in_block_pos;
   blocks[ block_pos ] = ( int* ) realloc( blocks[ block_pos ], block_sizes[ block_pos ] * sizeof( int ) );
 
-  // delete me
-  for( int pos=0; pos < size; pos++ )
-  {
-    // print_array( blocks[ pos ], block_sizes[ pos ] );
-    printf("%d, ", block_sizes[pos]);
-  }  
-  printf("\n");
-
-
   // Blöcke nach Rang an Knoten versenden
     int receive_block_sizes[size];
     int receive_block_displacements[size];
     
     MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
-    
-    printf("rank: %d ;; ", rank);
-    for (int pos = 0; pos < size; pos++) {
-      printf("original block size: %d, received block size: %d\n", block_sizes[pos], receive_block_sizes[pos]);
-    }
-    printf("\n");
     
     receive_block_displacements[0] = 0;
     for (int pos = 1; pos < size; pos++) {
@@ -184,17 +156,10 @@ int main( int argc, char *argv[] )
       blocksize += receive_block_sizes[pos];
     }
     
-    printf("rank %d, blocksize %d\n", rank, blocksize);
-    
     int blocks_per_processor[blocksize];
     
     MPI_Alltoallv(numbers_per_processor, block_sizes, displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
 
-    for( int pos=0; pos < blocksize; pos++ )
-    {
-      printf("%d, ", blocks_per_processor[pos]);
-    }
-    printf("\n");
   // jeder Prozessor sortiert seine Blöcke
     quicksort(blocks_per_processor, 0, blocksize - 1);
   // sortierte Blöcke einsammeln
@@ -206,12 +171,6 @@ int main( int argc, char *argv[] )
     receive_sorted_displacements[0] = 0;
     for (int pos = 1; pos < size; pos++) {
       receive_sorted_displacements[pos] = blocksizes[pos - 1] + receive_sorted_displacements[pos - 1];
-    }
-    
-    if (rank == 0) {
-      for (int pos = 0; pos < size; pos++) {
-        printf("blocksize %d, displ %d\n", blocksizes[pos], receive_sorted_displacements[pos]);
-      }
     }
     
     int sorted[numbers_size];
