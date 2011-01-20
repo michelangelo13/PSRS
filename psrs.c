@@ -12,6 +12,7 @@ void quicksort( int a[], int l, int r );
 void generate_random_numbers(int numbers[], int amount);
 void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[], int numbers_per_processor_size, int pivots[]);
 void displacements(int displacements[], int part_sizes[], int size);
+int sum(int part_sizes[], int part_sizes_length);
 
 int main( int argc, char *argv[] )
 {
@@ -94,12 +95,7 @@ int main( int argc, char *argv[] )
   int block_displacements[size];
   displacements(block_displacements, block_sizes, size);
 
-  int blocksize = 0;
-
-  for (int pos = 0; pos < size; pos++) {
-    blocksize += receive_block_sizes[pos];
-  }
-
+  int blocksize = sum(receive_block_sizes, size);
   int blocks_per_processor[blocksize];
 
   MPI_Alltoallv(numbers_per_processor, block_sizes, block_displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
@@ -207,4 +203,12 @@ void displacements(int displacements[], int part_sizes[], int size) {
   for (int pos = 1; pos < size; pos++) {
     displacements[pos] = part_sizes[pos - 1] + displacements[pos - 1];
   }
+}
+
+int sum(int part_sizes[], int part_sizes_length) {
+  int sum = 0;
+  for (int pos = 0; pos < part_sizes_length; pos++) {
+    sum += part_sizes[pos];
+  }
+  return sum;
 }
