@@ -91,8 +91,8 @@ int main( int argc, char *argv[] )
   MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
   
   displacements(receive_block_displacements, receive_block_sizes, size);
-  int displacements[size];
-  displacements(displacements, block_sizes, size);
+  int block_displacements[size];
+  displacements(block_displacements, block_sizes, size);
 
   int blocksize = 0;
 
@@ -102,7 +102,7 @@ int main( int argc, char *argv[] )
 
   int blocks_per_processor[blocksize];
 
-  MPI_Alltoallv(numbers_per_processor, block_sizes, displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
+  MPI_Alltoallv(numbers_per_processor, block_sizes, block_displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
 
   // jeder Prozessor sortiert seine Blöcke
   quicksort(blocks_per_processor, 0, blocksize - 1);
