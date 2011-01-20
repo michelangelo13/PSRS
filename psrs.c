@@ -32,6 +32,15 @@ int main( int argc, char *argv[] )
 
   // Zufallszahlen erzeugen (mit seed)
   int numbers_size = atoi( argv[1] ); // amount of numbers to generate
+  if (numbers_size < size * size) { // otherwise representative selection will cause problems
+    if (rank == 0) {
+      printf("Size of random array must be at least node_size * node_size, i.e. %d", size * size);
+    }
+    MPI_Finalize();
+    return 1;
+  }
+  
+  
   int numbers[ numbers_size ]; // will contain all generated numbers in root process
   if (rank == 0) {
     generate_random_numbers(numbers, numbers_size);
@@ -88,22 +97,44 @@ int main( int argc, char *argv[] )
 
   // Pivots verteilen
   MPI_Bcast(pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  printf("rank %d alive 1\n", rank);
+  print_array(pivots, size - 1);
+  print_array(numbers_per_processor, numbers_per_processor_size);
 
   // Blockbildung
   int block_sizes[ size ];
   divide_into_blocks(block_sizes, size, numbers_per_processor, numbers_per_processor_size, pivots);
 
+  printf("rank %d alive 2\n", rank);
+  print_array(block_sizes, size);
+
   // Bloecke nach Rang an Knoten versenden
   int receive_block_sizes[size];
   MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
+  
+  printf("rank %d alive 3\n", rank);
   
   int receive_block_displacements[size];
   displacements(receive_block_displacements, receive_block_sizes, size);
   int block_displacements[size];
   displacements(block_displacements, block_sizes, size);
+  
+  printf("rank %d alive 4\n", rank);
 
   int blocksize = sum(receive_block_sizes, size);
+  
+  printf("rank %d, blocksize %d\n", rank, blocksize);
+  print_array(receive_block_sizes, size);
+  
   int blocks_per_processor[blocksize];
+  
+  printf("rank: %d, blocksize: %d, numbers_per_processor_size: %d\n", rank, blocksize, numbers_per_processor_size);
+  print_array(numbers_per_processor, numbers_per_processor_size);
+  print_array(block_sizes, size);
+  print_array(block_displacements, size);
+  print_array(receive_block_sizes, size);
+  print_array(receive_block_displacements, size);
 
   MPI_Alltoallv(numbers_per_processor, block_sizes, block_displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
 
@@ -203,6 +234,9 @@ void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[]
     }
   }
   block_sizes[ block_sizes_pos ] = length;
+  for (int pos = block_sizes_pos + 1; pos < size; pos++) {
+    block_sizes[pos] = 0;
+  }
 }
 
 void displacements(int displacements[], int part_sizes[], int size) {
