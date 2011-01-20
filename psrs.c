@@ -53,8 +53,11 @@ int main( int argc, char *argv[] )
   int numbers_per_processor_size;
   MPI_Scatter(numbers_per_processor_sizes, 1, MPI_INT, &numbers_per_processor_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
   
+  int scatter_displacements[size];
+  displacements(scatter_displacements, numbers_per_processor_sizes, size);
+  
   int numbers_per_processor[ numbers_per_processor_size ];
-  MPI_Scatter(numbers, numbers_per_processor_size, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(numbers, numbers_per_processor_sizes, scatter_displacements, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
 
   // lokal sortieren
   quicksort( numbers_per_processor, 0, numbers_per_processor_size-1 );
