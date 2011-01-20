@@ -31,8 +31,6 @@ int main( int argc, char *argv[] )
   }
 
   int numbers_size = atoi( argv[1] ); // amount of numbers to generate
-  int numbers[ numbers_size ]; // will contain all generated numbers in root process
-
   if (numbers_size % size != 0) {
     if ( rank == 0 )
       printf("<size of random array> must be a multiple of the number of nodes (%d)\n", size);
@@ -40,15 +38,15 @@ int main( int argc, char *argv[] )
     return 1;
   }
 
-  int numbers_per_processor_size = numbers_size / size;
-  int numbers_per_processor[ numbers_per_processor_size ];
-  
   // Zufallszahlen erzeugen (mit seed)
+  int numbers[ numbers_size ]; // will contain all generated numbers in root process
   if (rank == 0) {
     generate_random_numbers(numbers, numbers_size);
   }
 
   // Zufallszahlen gleichmäßig verteilen
+  int numbers_per_processor_size = numbers_size / size;
+  int numbers_per_processor[ numbers_per_processor_size ];
   MPI_Scatter(numbers, numbers_per_processor_size, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
 
   // lokal sortieren
@@ -84,13 +82,12 @@ int main( int argc, char *argv[] )
   // Blockbildung
   int block_sizes[ size ];
   divide_into_blocks(block_sizes, size, numbers_per_processor, numbers_per_processor_size, pivots);
-  
+
   // Blöcke nach Rang an Knoten versenden
   int receive_block_sizes[size];
-  int receive_block_displacements[size];
-
   MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
   
+  int receive_block_displacements[size];
   displacements(receive_block_displacements, receive_block_sizes, size);
   int block_displacements[size];
   displacements(block_displacements, block_sizes, size);
@@ -103,10 +100,10 @@ int main( int argc, char *argv[] )
   // jeder Prozessor sortiert seine Blöcke
   quicksort(blocks_per_processor, 0, blocksize - 1);
   // sortierte Blöcke einsammeln
+  // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
   int blocksizes[size];
-    // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
   MPI_Gather(&blocksize, 1, MPI_INT, blocksizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+
   int receive_sorted_displacements[size];
   displacements(receive_sorted_displacements, blocksizes, size);
 
