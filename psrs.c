@@ -9,6 +9,7 @@
 
 void print_array( int a[], int size_of_a );
 void quicksort( int a[], int l, int r );
+void generate_random_numbers(int numbers[], int amount);
 
 int main( int argc, char *argv[] )
 {
@@ -38,30 +39,10 @@ int main( int argc, char *argv[] )
 
   int numbers_per_processor_size = numbers_size / size;
   int numbers_per_processor[ numbers_per_processor_size ];
-
-  if ( rank == 0 )
-  {
-    // Zufallszahlen erzeugen (mit seed)
-    srand ( SEED );
-    for( int pos=0; pos < numbers_size; pos++ )
-    {
-      int next;
-      int already_in_numbers;
-      do
-      {
-        already_in_numbers = 0;
-        next = rand() % ( RAND_MAGNITUDE_FACTOR * numbers_size );
-        for ( int check_pos=0; check_pos <= pos; check_pos++ )
-        {
-          if ( numbers[ check_pos ] == next )
-          {
-            already_in_numbers = 1;
-            break;
-          }
-        }
-      } while ( already_in_numbers == 1 );
-      numbers[ pos ] = next;
-    }
+  
+  // Zufallszahlen erzeugen (mit seed)
+  if (rank == 0) {
+    generate_random_numbers(numbers, numbers_size);
   }
 
   // Zufallszahlen gleichmäßig verteilen
@@ -209,5 +190,28 @@ void quicksort(int a[], int l, int r)
 
     quicksort(a, l, i-1);
     quicksort(a, i+1, r);
+  }
+}
+
+void generate_random_numbers(int numbers[], int amount) {
+  srand ( SEED );
+  for( int pos=0; pos < amount; pos++ )
+  {
+    int next;
+    int already_in_numbers;
+    do
+    {
+      already_in_numbers = 0;
+      next = rand() % ( RAND_MAGNITUDE_FACTOR * amount );
+      for ( int check_pos=0; check_pos <= pos; check_pos++ )
+      {
+        if ( numbers[ check_pos ] == next )
+        {
+          already_in_numbers = 1;
+          break;
+        }
+      }
+    } while ( already_in_numbers == 1 );
+    numbers[ pos ] = next;
   }
 }
