@@ -185,11 +185,6 @@ void generate_random_numbers(int numbers[], int amount) {
 }
 
 void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[], int numbers_per_processor_size, int pivots[]) {
-  int* blocks[ size ];
-  for( int pos=0; pos < size; pos++ )
-  {
-    blocks[ pos ] = ( int* ) malloc( numbers_per_processor_size * sizeof( int ) );
-  }
   int pivot_pos = 0;
   int pivot = pivots[ pivot_pos ];
   int block_pos = 0;
@@ -198,21 +193,19 @@ void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[]
   {
     if( numbers_per_processor[ pos ] <= pivot )
     {
-      blocks[ block_pos ][ in_block_pos++ ] = numbers_per_processor[ pos ];
+      in_block_pos++;
     }
     else
     {
       block_sizes[ block_pos ] = in_block_pos;
-      blocks[ block_pos ] = ( int* ) realloc( blocks[ block_pos ], block_sizes[ block_pos ] * sizeof( int ) );
       block_pos++;
       in_block_pos = 0;
-      if( pivot_pos < ( size-1 ) -1 )
-        pivot = pivots[ ++pivot_pos ];
+      if( ++pivot_pos < ( size - 1 ) )
+        pivot = pivots[ pivot_pos ];
       else
         pivot = INT_MAX;
       pos--;
     }
   }
   block_sizes[ block_pos ] = in_block_pos;
-  blocks[ block_pos ] = ( int* ) realloc( blocks[ block_pos ], block_sizes[ block_pos ] * sizeof( int ) );
 }
