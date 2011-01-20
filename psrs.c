@@ -44,7 +44,7 @@ int main( int argc, char *argv[] )
     generate_random_numbers(numbers, numbers_size);
   }
 
-  // Zufallszahlen gleichmäßig verteilen
+  // Zufallszahlen gleichmaessig verteilen
   int numbers_per_processor_size = numbers_size / size;
   int numbers_per_processor[ numbers_per_processor_size ];
   MPI_Scatter(numbers, numbers_per_processor_size, MPI_INT, numbers_per_processor, numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
@@ -52,7 +52,7 @@ int main( int argc, char *argv[] )
   // lokal sortieren
   quicksort( numbers_per_processor, 0, numbers_per_processor_size-1 );
 
-  // repräsentative Selektion erstellen
+  // repraesentative Selektion erstellen
   int w = numbers_size / ( size * size );
   int representative_selection[ size ];
   for( int pos=0; pos < size; pos++ )
@@ -83,7 +83,7 @@ int main( int argc, char *argv[] )
   int block_sizes[ size ];
   divide_into_blocks(block_sizes, size, numbers_per_processor, numbers_per_processor_size, pivots);
 
-  // Blöcke nach Rang an Knoten versenden
+  // Bloecke nach Rang an Knoten versenden
   int receive_block_sizes[size];
   MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
   
@@ -97,9 +97,9 @@ int main( int argc, char *argv[] )
 
   MPI_Alltoallv(numbers_per_processor, block_sizes, block_displacements, MPI_INT, blocks_per_processor, receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD);
 
-  // jeder Prozessor sortiert seine Blöcke
+  // jeder Prozessor sortiert seine Bloecke
   quicksort(blocks_per_processor, 0, blocksize - 1);
-  // sortierte Blöcke einsammeln
+  // sortierte Bloecke einsammeln
   // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
   int blocksizes[size];
   MPI_Gather(&blocksize, 1, MPI_INT, blocksizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
