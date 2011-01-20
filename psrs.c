@@ -50,7 +50,6 @@ int main( int argc, char *argv[] )
 
   // lokal sortieren
   quicksort( numbers_per_processor, 0, numbers_per_processor_size-1 );
-  // print_array( numbers_per_processor, numbers_per_processor_size );
 
   // repräsentative Selektion erstellen
   int w = numbers_size / ( size * size );
@@ -61,7 +60,6 @@ int main( int argc, char *argv[] )
   }
 
   // Selektion auf einem Knoten einsammeln
-  // int MPI_Gather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype, recvtype, int root, MPI_Comm comm)
   int selected_numbers[ size * size ];
   MPI_Gather(representative_selection, size, MPI_INT, selected_numbers, size, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -69,7 +67,6 @@ int main( int argc, char *argv[] )
   int pivots[size - 1];
   if (rank == 0) {
     quicksort(selected_numbers, 0, size * size - 1);
-    // print_array(selected_numbers, size * size);
 
     // Pivots selektieren
     int t = size / 2;
@@ -79,7 +76,6 @@ int main( int argc, char *argv[] )
   }
 
   // Pivots verteilen
-  // int MPI_Bcast ( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm)
   MPI_Bcast(pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   // Blockbildung
