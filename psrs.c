@@ -11,6 +11,7 @@ void print_array( int a[], int size_of_a );
 void quicksort( int a[], int l, int r );
 void generate_random_numbers(int numbers[], int amount);
 void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[], int numbers_per_processor_size, int pivots[]);
+void displacements(int displacements[], int part_sizes[], int size);
 
 int main( int argc, char *argv[] )
 {
@@ -88,17 +89,11 @@ int main( int argc, char *argv[] )
   int receive_block_displacements[size];
 
   MPI_Alltoall(block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD);
-
-  receive_block_displacements[0] = 0;
-  for (int pos = 1; pos < size; pos++) {
-    receive_block_displacements[pos] = receive_block_sizes[pos - 1] + receive_block_displacements[pos - 1];
-  }
-
+  
+  displacements(receive_block_displacements, receive_block_sizes, size);
   int displacements[size];
-  displacements[0] = 0;
-  for (int pos = 1; pos < size; pos++) {
-    displacements[pos] = block_sizes[pos - 1] + displacements[pos - 1];
-  }
+  displacements(displacements, block_sizes, size);
+
   int blocksize = 0;
 
   for (int pos = 0; pos < size; pos++) {
@@ -115,12 +110,9 @@ int main( int argc, char *argv[] )
   int blocksizes[size];
     // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
   MPI_Gather(&blocksize, 1, MPI_INT, blocksizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
+  
   int receive_sorted_displacements[size];
-  receive_sorted_displacements[0] = 0;
-  for (int pos = 1; pos < size; pos++) {
-    receive_sorted_displacements[pos] = blocksizes[pos - 1] + receive_sorted_displacements[pos - 1];
-  }
+  displacements(receive_sorted_displacements, blocksizes, size);
 
   int sorted[numbers_size];
   MPI_Gatherv(blocks_per_processor, blocksize, MPI_INT, sorted, blocksizes, receive_sorted_displacements, MPI_INT, 0, MPI_COMM_WORLD);
@@ -208,4 +200,11 @@ void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[]
     }
   }
   block_sizes[ block_sizes_pos ] = length;
+}
+
+void displacements(int displacements[], int part_sizes[], int size) {
+  displacements[0] = 0;
+  for (int pos = 1; pos < size; pos++) {
+    displacements[pos] = part_sizes[pos - 1] + displacements[pos - 1];
+  }
 }
