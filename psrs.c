@@ -14,13 +14,19 @@ void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[]
 void displacements(int displacements[], int part_sizes[], int size);
 int sum(int part_sizes[], int part_sizes_length);
 
-int main( int argc, char *argv[] ) // FIXME does not run with a single node
+int main( int argc, char *argv[] )
 {
   int rank, size, silent = 0;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank (MPI_COMM_WORLD, &rank);
   MPI_Comm_size (MPI_COMM_WORLD, &size);
+  
+  if (size == 1) {
+    printf("At least two nodes must be used!"); // otherwise it's impossible to calculate size - 1 pivots, i.e. 0 pivots
+    MPI_Finalize();
+    return 1;
+  }
 
   if ( argc != 2 && argc != 3 )
   {
