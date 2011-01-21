@@ -14,7 +14,7 @@ void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[]
 void displacements(int displacements[], int part_sizes[], int size);
 int sum(int part_sizes[], int part_sizes_length);
 
-int main( int argc, char *argv[] )
+int main( int argc, char *argv[] ) // FIXME does not run with a single node
 {
   int rank, size, silent = 0;
 
