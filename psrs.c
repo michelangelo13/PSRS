@@ -42,6 +42,10 @@ int main( int argc, char *argv[] )
   if (rank == 0) {
     generate_random_numbers(numbers, numbers_size);
   }
+  
+  if (rank == 0 && silent == 0) {
+    printf("Start sorting with %d nodes\n", size);
+  }
 
   // Zufallszahlen gleichmaessig verteilen
   double time = MPI_Wtime(); // starte Zeitmessung
@@ -133,7 +137,7 @@ int main( int argc, char *argv[] )
     if (silent) {
       printf("%f\n", time);
     } else {
-      printf("Sorted numbers: %d\n", silent);
+      printf("Sorted numbers:\n");
       print_array(sorted, numbers_size);
       printf("Benoetigte Zeit: %f Sekunden\n", time);
     }
