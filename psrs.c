@@ -38,6 +38,8 @@ int main( int argc, char *argv[] )
   }
 
   // Zufallszahlen gleichmaessig verteilen
+  double time = MPI_Wtime(); // starte Zeitmessung
+
   int temp_numbers_per_processor_size = numbers_size / size;
   int spare_numbers = numbers_size - temp_numbers_per_processor_size * size;
   
@@ -123,6 +125,8 @@ int main( int argc, char *argv[] )
   if (rank == 0) {
     printf("Sorted numbers: \n");
     print_array(sorted, numbers_size);
+    time = MPI_Wtime() - time;
+		printf("Benoetigte Zeit: %f Sekunden\n", time);
   }
   MPI_Finalize();
   return 0;
