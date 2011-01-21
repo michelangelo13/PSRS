@@ -16,18 +16,24 @@ int sum(int part_sizes[], int part_sizes_length);
 
 int main( int argc, char *argv[] )
 {
-  int rank, size;
+  int rank, size, silent = 0;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank (MPI_COMM_WORLD, &rank);
   MPI_Comm_size (MPI_COMM_WORLD, &size);
 
-  if ( argc != 2 )
+  if ( argc != 2 && argc != 3 )
   {
     if ( rank == 0 )
-      printf( "Synopsis: psrs <size of random array>\n" );
+      printf( "Synopsis: psrs <size of random array> <silent?>\n" );
     MPI_Finalize();
     return 1;
+  }
+  
+  if (argc == 3) {
+    if (strcmp(argv[2], "silent") == 0) {
+      silent = 1;
+    }
   }
 
   // Zufallszahlen erzeugen (mit seed)
@@ -123,10 +129,14 @@ int main( int argc, char *argv[] )
   MPI_Gatherv(blocks_per_processor, blocksize, MPI_INT, sorted, blocksizes, receive_sorted_displacements, MPI_INT, 0, MPI_COMM_WORLD);
   // Fertig!
   if (rank == 0) {
-    printf("Sorted numbers: \n");
-    print_array(sorted, numbers_size);
     time = MPI_Wtime() - time;
-		printf("Benoetigte Zeit: %f Sekunden\n", time);
+    if (silent) {
+      printf("%f\n", time);
+    } else {
+      printf("Sorted numbers: %d\n", silent);
+      print_array(sorted, numbers_size);
+      printf("Benoetigte Zeit: %f Sekunden\n", time);
+    }
   }
   MPI_Finalize();
   return 0;
