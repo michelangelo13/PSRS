@@ -21,12 +21,6 @@ int main( int argc, char *argv[] )
   MPI_Init(&argc, &argv);
   MPI_Comm_rank (MPI_COMM_WORLD, &rank);
   MPI_Comm_size (MPI_COMM_WORLD, &size);
-  
-  if (size == 1) {
-    printf("At least two nodes must be used!"); // otherwise it's impossible to calculate size - 1 pivots, i.e. 0 pivots
-    MPI_Finalize();
-    return 1;
-  }
 
   if ( argc != 2 && argc != 3 )
   {
@@ -205,7 +199,14 @@ void generate_random_numbers(int numbers[], int amount) {
 
 void divide_into_blocks(int block_sizes[], int size, int numbers_per_processor[], int numbers_per_processor_size, int pivots[]) {
   int pivot_pos = 0;
-  int pivot = pivots[ pivot_pos ];
+  int pivot;
+  
+  if (size == 1) { // to handle 0 pivots
+    pivot = INT_MAX;
+  } else {
+    pivot = pivots[pivot_pos];
+  }
+  
   int block_sizes_pos = 0;
   int length = 0;
   for( int pos=0; pos < numbers_per_processor_size; pos++ )
