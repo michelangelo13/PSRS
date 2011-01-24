@@ -179,9 +179,11 @@ int main( int argc, char *argv[] )
   {
     if ( output_level == 0 )
     {
-      // print_array( sorted, numbers_size );
+      print_array( sorted, numbers_size );
       printf( "\nnumber generation time          = %.15f msec\n",
 	      time_gen * 1000 );
+      printf( "local sorting time              = %.15f msec\n",
+	      time_local_sort * 1000 );
       printf( "total local sorting time        = %.15f msec\n",
 	      time_total_local_sort * 1000 );
       printf( "communication/organization time = %.15f msec\n",
@@ -194,8 +196,9 @@ int main( int argc, char *argv[] )
     }
     if ( output_level == 1 )
     {
-      printf( "%.15f %.15f %.15f %.15f %.15f ",
+      printf( "%.15f %.15f %.15f %.15f %.15f %.15f ",
 	      time_gen * 1000, // Zeit zur Generation des Zufallsfelds
+	      time_local_sort * 1000, // lokale Sortierzeit auf Knoten 0
 	      time_total_local_sort * 1000, // Summe der lokalen Sortierzeiten
 	      ( time_rest_1 + time_rest_2 ) * 1000, // Kommunikationszeit auf Knoten 0
 	      ( time_rest_1 + time_rest_2 + time_total_local_sort + time_gen ) * 1000, // Gesamtzeit mit Generation des Zufallsfelds
