@@ -30,7 +30,9 @@ int main( int argc, char *argv[] )
   MPI_Comm_size (MPI_COMM_WORLD, &size);
 
   // Zeitmesspunkte
-  double time_start, time_gen, time_rest_1, time_local_sort, time_rest_2;
+  double time_start, time_gen, time_local_sort, time_since_last;
+  double time_comm_1, time_comm_2, time_comm_3, time_comm_4, time_comm_5, time_comm_6, time_comm_7, time_comm_8;
+  double time_org_1, time_org_2, time_org_3, time_org_4, time_org_5, time_org_6, time_org_7, time_org_8;
 
   // (minimalistischer) Plausibilitäts-Check der Übergabeparameter
   if ( argc < 2 )
@@ -58,6 +60,7 @@ int main( int argc, char *argv[] )
 
   // Zeitmessung initialisieren
   time_start = MPI_Wtime();
+  time_since_last = time_start;
 
   // Zufallszahlen erzeugen
   int numbers[ numbers_size ];
@@ -72,7 +75,8 @@ int main( int argc, char *argv[] )
   }
 
   // Zeit für Zufallszahlengenerierung messen
-  time_gen = MPI_Wtime() - time_start;
+  time_gen = MPI_Wtime() - time_since_last;
+  time_since_last += time_gen;
 
   // Zufallszahlen gleichmäßig verteilen
   int temp_numbers_per_processor_size = numbers_size / size;
@@ -90,24 +94,38 @@ int main( int argc, char *argv[] )
     }
   }
   
+  // Organisationszeit 1
+  time_org_1 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_1;
+
   int numbers_per_processor_size;
   MPI_Scatter(numbers_per_processor_sizes, 1, MPI_INT, &numbers_per_processor_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
   
+  // Kommunikationszeit 1
+  time_comm_1 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_1;
+
   int scatter_displacements[size];
   displacements(scatter_displacements, numbers_per_processor_sizes, size);
   
+  // Organisationszeit 2
+  time_org_2 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_2;
+
   int numbers_per_processor[ numbers_per_processor_size ];
   MPI_Scatterv(numbers, numbers_per_processor_sizes, scatter_displacements, MPI_INT, numbers_per_processor,
     numbers_per_processor_size, MPI_INT, 0, MPI_COMM_WORLD);
 
-  // Kommunikationszeit für Verteilung der Zufallszahlen
-  time_rest_1 = MPI_Wtime() - time_start - time_gen;
+  // Kommunikationszeit 2
+  time_comm_2 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_2;
 
   // lokal sortieren
   quicksort( numbers_per_processor, 0, numbers_per_processor_size-1 );
 
   // Zeit für lokales Sortieren
-  time_local_sort = MPI_Wtime() - time_start - time_gen - time_rest_1;
+  time_local_sort = MPI_Wtime() - time_since_last;
+  time_since_last += time_local_sort;
 
   // repräsentative Auswahl erstellen
   int w = numbers_size / ( size * size );
@@ -115,9 +133,17 @@ int main( int argc, char *argv[] )
   for( int pos=0; pos < size; pos++ )
     representative_selection[ pos ] = numbers_per_processor[ pos * w ];
 
+  // Organisationszeit 3
+  time_org_3 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_3;
+
   // Auswahl auf einem Knoten einsammeln
   int selected_numbers[ size * size ];
   MPI_Gather( representative_selection, size, MPI_INT, selected_numbers, size, MPI_INT, 0, MPI_COMM_WORLD );
+
+  // Kommunikationszeit 3
+  time_comm_3 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_3;
 
   // Auswahl sortieren
   int pivots[ size - 1 ];
@@ -130,79 +156,129 @@ int main( int argc, char *argv[] )
       pivots[ pos - 1 ] = selected_numbers[ pos * size + t ];
   }
 
+  // Organisationszeit 4
+  time_org_4 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_4;
+
   // Pivots verteilen
   MPI_Bcast( pivots, size - 1, MPI_INT, 0, MPI_COMM_WORLD );
+
+  // Kommunikationszeit 4
+  time_comm_4 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_4;
 
   // Blockbildung
   int block_sizes[ size ];
   divide_into_blocks( block_sizes, size, numbers_per_processor, numbers_per_processor_size, pivots );
 
+  // Organisationszeit 5
+  time_org_5 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_5;
+
   // Blöcke nach Rang an Knoten versenden
   int receive_block_sizes[ size ];
   MPI_Alltoall( block_sizes, 1, MPI_INT, receive_block_sizes, 1, MPI_INT, MPI_COMM_WORLD );
   
+  // Kommunikationszeit 5
+  time_comm_5 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_5;
+
   int receive_block_displacements[ size ];
   displacements( receive_block_displacements, receive_block_sizes, size );
   int block_displacements[ size ];
   displacements( block_displacements, block_sizes, size );
 
+  // Organisationszeit 6
+  time_org_6 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_6;
+
   int blocksize = sum( receive_block_sizes, size );
   int blocks_per_processor[ blocksize ];
-  
   MPI_Alltoallv( numbers_per_processor, block_sizes, block_displacements, MPI_INT, blocks_per_processor,
     receive_block_sizes, receive_block_displacements, MPI_INT, MPI_COMM_WORLD );
 
+  // Kommunikationszeit 6
+  time_comm_6 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_6;
+
   // jeder Knoten sortiert seine Blöcke
   quicksort( blocks_per_processor, 0, blocksize -1 );
+
+  // Organisationszeit 7
+  time_org_7 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_7;
 
   // sortierte Blöcke einsammeln
   // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
   int blocksizes[ size ];
   MPI_Gather( &blocksize, 1, MPI_INT, blocksizes, 1, MPI_INT, 0, MPI_COMM_WORLD );
 
+  // Kommunikationszeit 7
+  time_comm_7 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_7;
+
   int receive_sorted_displacements[ size ];
   displacements( receive_sorted_displacements, blocksizes, size );
+
+  // Organisationszeit 8
+  time_org_8 = MPI_Wtime() - time_since_last;
+  time_since_last += time_org_8;
 
   int sorted[ numbers_size ];
   MPI_Gatherv( blocks_per_processor, blocksize, MPI_INT, sorted, blocksizes, receive_sorted_displacements,
     MPI_INT, 0, MPI_COMM_WORLD );
 
-  // Kommunikationszeit für alles andere
-  time_rest_2 = MPI_Wtime() - time_start - time_gen - time_rest_1 - time_local_sort;
+  // Kommunikationszeit 8
+  time_comm_8 = MPI_Wtime() - time_since_last;
+  time_since_last += time_comm_8;
 
   // lokale Sortierzeiten zusammenrechnen
-  double time_total_local_sort = 0.0;
-  MPI_Reduce( &time_local_sort, &time_total_local_sort, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
+  double time_comm = time_comm_1 + time_comm_2 + time_comm_3 + time_comm_4
+    + time_comm_5 + time_comm_6 + time_comm_7 + time_comm_8;
+  double time_org = time_org_1 + time_org_2 + time_org_3 + time_org_4
+    + time_org_5 + time_org_6 + time_org_7 + time_org_8;
+  double time_local_sort_total = 0.0;
+  MPI_Reduce( &time_local_sort, &time_local_sort_total, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
+  double time_comm_total = 0.0;
+  MPI_Reduce( &time_comm, &time_comm_total, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
+  double time_org_total = 0.0;
+  MPI_Reduce( &time_org, &time_org_total, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
 
   // Fertig!
   if ( rank == 0 )
   {
+    // Durchschnittswerte
+    double time_local_sort_mean = time_local_sort / size;
+    double time_comm_mean = time_comm / size;
+    double time_org_mean = time_org / size;
+    // Konvertierung in Millisekunden
+    time_gen *= 1000;
+    time_local_sort_mean *= 1000;
+    time_comm_mean *= 1000;
+    time_org_mean *= 1000;
+    // Ausgabe
     if ( output_level == 0 )
     {
       print_array( sorted, numbers_size );
-      printf( "\nnumber generation time          = %.15f msec\n",
-	      time_gen * 1000 );
-      printf( "local sorting time              = %.15f msec\n",
-	      time_local_sort * 1000 );
-      printf( "total local sorting time        = %.15f msec\n",
-	      time_total_local_sort * 1000 );
-      printf( "communication/organization time = %.15f msec\n",
-	      ( time_rest_1 + time_rest_2 ) * 1000 );
-      printf( "-------------------------------\n" );
-      printf( "total time                      = %.15f msec\n",
-	      ( time_rest_1 + time_rest_2 + time_total_local_sort + time_gen ) * 1000 );
-      printf( "total time w/o generation       = %.15f msec\n",
-	      ( time_rest_1 + time_rest_2 + time_total_local_sort ) * 1000 );
+      printf( "\ntime measurement:\n" );
+      printf( "number generation   = %.15f msec\n", time_gen );
+      printf( "local sort (avg)    = %.15f msec\n", time_local_sort_mean );
+      printf( "communication (avg) = %.15f msec\n", time_comm_mean );
+      printf( "organization (avg)  = %.15f msec\n", time_org_mean );
+      printf( "-------------------\n" );
+      printf( "total time (no gen) = %.15f msec\n", time_local_sort_mean + time_comm_mean + time_org_mean );
+      printf( "total time          = %.15f msec\n", time_local_sort_mean + time_comm_mean + time_org_mean + time_gen );
     }
     if ( output_level == 1 )
     {
+      // Reihenfolge wie bei Outputlevel 0
       printf( "%.15f %.15f %.15f %.15f %.15f %.15f ",
-	      time_gen * 1000, // Zeit zur Generation des Zufallsfelds
-	      time_local_sort * 1000, // lokale Sortierzeit auf Knoten 0
-	      time_total_local_sort * 1000, // Summe der lokalen Sortierzeiten
-	      ( time_rest_1 + time_rest_2 ) * 1000, // Kommunikationszeit auf Knoten 0
-	      ( time_rest_1 + time_rest_2 + time_total_local_sort + time_gen ) * 1000, // Gesamtzeit mit Generation des Zufallsfelds
-	      ( time_rest_1 + time_rest_2 + time_total_local_sort ) * 1000 // Gesamtzeit ohne Generation des Zufallsfelds
+	      time_gen,
+	      time_local_sort_mean,
+	      time_comm_mean,
+	      time_org_mean,
+	      time_local_sort_mean + time_comm_mean + time_org_mean,
+	      time_local_sort_mean + time_comm_mean + time_org_mean + time_gen
       );
       if ( is_sorted( sorted, numbers_size ) == 1 )
 	printf( "valid\n" );
