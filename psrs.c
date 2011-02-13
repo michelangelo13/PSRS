@@ -99,14 +99,14 @@ int main( int argc, char *argv[] )
   time_since_last += time_org_1;
 
   int numbers_per_processor_size;
-  MPI_Scatter(numbers_per_processor_sizes, 1, MPI_INT, &numbers_per_processor_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatter(numbers_per_processor_sizes, 1, MPI_INT, &numbers_per_processor_size, 1, MPI_INT, 0, MPI_COMM_WORLD); // TODO avoid by accessing numbers_per_processor_sizes[rank] since each processor knows arguments and cluster size
   
   // Kommunikationszeit 1
   time_comm_1 = MPI_Wtime() - time_since_last;
   time_since_last += time_comm_1;
 
   int scatter_displacements[size];
-  displacements(scatter_displacements, numbers_per_processor_sizes, size);
+  displacements(scatter_displacements, numbers_per_processor_sizes, size); // TODO root process only
   
   // Organisationszeit 2
   time_org_2 = MPI_Wtime() - time_since_last;
@@ -131,7 +131,7 @@ int main( int argc, char *argv[] )
   int w = numbers_size / ( size * size );
   int representative_selection[ size ];
   for( int pos=0; pos < size; pos++ )
-    representative_selection[ pos ] = numbers_per_processor[ pos * w ];
+    representative_selection[ pos ] = numbers_per_processor[ pos * w ]; // FIXME should be pos * w + 1
 
   // Organisationszeit 3
   time_org_3 = MPI_Wtime() - time_since_last;
@@ -209,7 +209,7 @@ int main( int argc, char *argv[] )
   time_since_last += time_org_7;
 
   // sortierte Blöcke einsammeln
-  // kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
+  // TODO kann durch MPI_Allgather statt MPI_Alltoall vermieden werden
   int blocksizes[ size ];
   MPI_Gather( &blocksize, 1, MPI_INT, blocksizes, 1, MPI_INT, 0, MPI_COMM_WORLD );
 
